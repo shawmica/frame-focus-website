@@ -5,10 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Image, Upload, Delete } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Check for required environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Create Supabase client with validation
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 interface GalleryImage {
   id: string;
@@ -22,6 +28,22 @@ export default function Dashboard() {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Show error if Supabase is not properly initialized
+  if (!supabase) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="bg-white p-8 rounded shadow w-80 space-y-5">
+          <h2 className="text-xl font-bold">Configuration Error</h2>
+          <p className="text-red-500">
+            Supabase configuration is missing. Please make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY 
+            environment variables are set.
+          </p>
+          <Button onClick={() => nav("/")}>Return Home</Button>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(res => {
@@ -47,6 +69,9 @@ export default function Dashboard() {
         url: supabase.storage.from("gallery").getPublicUrl(user.id + `/${f.name}`).data.publicUrl,
         name: f.name,
       })));
+    } else if (error) {
+      toast.error("Failed to load images");
+      console.error("Failed to load images:", error);
     }
     setLoading(false);
   }
@@ -60,6 +85,10 @@ export default function Dashboard() {
     if (!error) {
       fetchImages();
       setFile(null);
+      toast.success("Image uploaded successfully");
+    } else {
+      toast.error("Upload failed");
+      console.error("Upload failed:", error);
     }
     setLoading(false);
   }
@@ -69,6 +98,7 @@ export default function Dashboard() {
     setLoading(true);
     await supabase.storage.from("gallery").remove([user.id + "/" + name]);
     fetchImages();
+    toast.success("Image deleted successfully");
     setLoading(false);
   }
 

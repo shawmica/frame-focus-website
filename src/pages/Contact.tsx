@@ -1,7 +1,19 @@
+
 import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { cn } from "@/lib/utils";
+import { createClient } from "@supabase/supabase-js";
+import { toast } from "sonner";
+
+// Check for required environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Create Supabase client with validation
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 const Contact = () => {
   const [formState, setFormState] = useState({
@@ -27,11 +39,12 @@ const Contact = () => {
     setIsSubmitting(true);
     setError("");
 
-    // Send to Supabase
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    // Check if Supabase is configured
+    if (!supabase) {
+      setError("Unable to submit form: Supabase configuration is missing");
+      setIsSubmitting(false);
+      return;
+    }
 
     const { error: upsertError } = await supabase
       .from("contact_requests")
@@ -46,9 +59,12 @@ const Contact = () => {
 
     if (upsertError) {
       setError("Failed to send message. Please try again.");
+      toast.error("Failed to send message");
+      console.error("Form submission error:", upsertError);
     } else {
       setIsSuccess(true);
       setFormState({ name: "", email: "", subject: "", message: "" });
+      toast.success("Message sent successfully!");
       setTimeout(() => setIsSuccess(false), 5000);
     }
 

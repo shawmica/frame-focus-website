@@ -4,10 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { createClient } from "@supabase/supabase-js";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Check for required environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// Create Supabase client with validation
+const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 export default function Auth() {
   const [view, setView] = useState<"login" | "register">("login");
@@ -16,6 +22,21 @@ export default function Auth() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
+
+  // Show error if Supabase is not properly initialized
+  if (!supabase) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="bg-white p-8 rounded shadow w-80 space-y-5">
+          <h2 className="text-xl font-bold">Configuration Error</h2>
+          <p className="text-red-500">
+            Supabase configuration is missing. Please make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY 
+            environment variables are set.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +49,10 @@ export default function Auth() {
     } else {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) setError(error.message);
-      else setView("login");
+      else {
+        toast.success("Registration successful! Please check your email for verification.");
+        setView("login");
+      }
     }
     setLoading(false);
   };
