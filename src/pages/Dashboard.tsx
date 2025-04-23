@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { Image, Upload, Delete } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-// Check for required environment variables
+// Validate Supabase environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 

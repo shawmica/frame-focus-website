@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
-// Check for required environment variables
+// Validate Supabase environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
