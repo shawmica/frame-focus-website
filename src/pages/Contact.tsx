@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -23,29 +22,37 @@ const Contact = () => {
     });
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
-    
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    // Send to Supabase
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    const { error: upsertError } = await supabase
+      .from("contact_requests")
+      .insert([
+        {
+          name: formState.name,
+          email: formState.email,
+          subject: formState.subject,
+          message: formState.message,
+        },
+      ]);
+
+    if (upsertError) {
+      setError("Failed to send message. Please try again.");
+    } else {
       setIsSuccess(true);
-      
-      // Reset form
-      setFormState({
-        name: "",
-        email: "",
-        subject: "",
-        message: ""
-      });
-      
-      // Reset success message after 5 seconds
-      setTimeout(() => {
-        setIsSuccess(false);
-      }, 5000);
-    }, 1500);
+      setFormState({ name: "", email: "", subject: "", message: "" });
+      setTimeout(() => setIsSuccess(false), 5000);
+    }
+
+    setIsSubmitting(false);
   };
   
   return (
